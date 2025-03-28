@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using SearchIp;
 
 class Program
 {
@@ -21,12 +22,62 @@ class Program
             return;
         }
 
-        string userIpAddress = args[0];
+        var commandList = Resource1.comandos.Split(",").ToList();
 
-        if (VerifyIpRegex(userIpAddress) is false)
+        string userIpAddress = "";
+
+        foreach (string arg in args)
+        {
+            if (
+                commandList.Contains(arg) is false &&
+                VerifyIpRegex(arg) is false
+            )
+            {
+                ConsoleWriteColor(
+                    ConsoleColor.Red,
+                    "Bad Argument -> " + arg
+                );
+                return;
+            }
+
+            if (VerifyIpRegex(arg) is true)
+            {
+                userIpAddress = arg;
+            }
+        }
+
+        if (args.Contains("-h"))
+        {
+            ShowHelp();
             return;
+        }
 
-        string apiUrl = $"http://ip-api.com/json/{userIpAddress}";
+        await GetIpGeographicInformation(userIpAddress);
+    }
+
+    static void ConsoleWriteColor(ConsoleColor num, string message)
+    {
+        Console.ForegroundColor = num;
+        Console.Write(message + " ");
+        Console.ResetColor();
+    }
+
+    static bool VerifyIpRegex(string ip)
+    {
+        if (
+            !System.Text.RegularExpressions.Regex.IsMatch(
+                ip,
+                @"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")
+        )
+        {
+            return false;
+        }
+        return true;
+    }
+
+    async static Task GetIpGeographicInformation(string IpAddress)
+    {
+        string apiUrl = $"http://ip-api.com/json/{IpAddress}";
 
         using var client = new HttpClient();
 
@@ -89,27 +140,8 @@ class Program
         }
     }
 
-    static void ConsoleWriteColor(ConsoleColor num, string message)
+    static void ShowHelp()
     {
-        Console.ForegroundColor = num;
-        Console.Write(message + " ");
-        Console.ResetColor();
-    }
-
-    static bool VerifyIpRegex(string ip)
-    {
-        if (
-            !System.Text.RegularExpressions.Regex.IsMatch(
-                ip,
-                @"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")
-        )
-        {
-            ConsoleWriteColor(
-                ConsoleColor.Red,
-                "Invalid IPv4 address format. Please use format: xxx.xxx.xxx.xxx"
-            );
-            return false;
-        }
-        return true;
+        ConsoleWriteColor(ConsoleColor.Green, "Help message");
     }
 }
